@@ -1,12 +1,15 @@
 "use client";
 
+import { useCoAgent, useCopilotAction } from "@copilotkit/react-core";
+import {
+  type CopilotKitCSSProperties,
+  CopilotSidebar,
+} from "@copilotkit/react-ui";
+import { useState } from "react";
+import { MoonCard } from "@/components/moon";
 import { ProverbsCard } from "@/components/proverbs";
 import { WeatherCard } from "@/components/weather";
-import { MoonCard } from "@/components/moon";
-import { AgentState } from "@/lib/types";
-import { useCoAgent, useCopilotAction } from "@copilotkit/react-core";
-import { CopilotKitCSSProperties, CopilotSidebar } from "@copilotkit/react-ui";
-import { useState } from "react";
+import type { AgentState } from "@/lib/types";
 
 export default function CopilotKitPage() {
   const [themeColor, setThemeColor] = useState("#6366f1");

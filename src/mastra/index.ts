@@ -1,7 +1,7 @@
+import { ConsoleLogger, LogLevel } from "@mastra/core/logger";
 import { Mastra } from "@mastra/core/mastra";
 import { LibSQLStore } from "@mastra/libsql";
 import { weatherAgent } from "./agents";
-import { ConsoleLogger, LogLevel } from "@mastra/core/logger";
 
 export const mastra = new Mastra({
   agents: {

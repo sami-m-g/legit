@@ -1,10 +1,10 @@
+import { MastraAgent } from "@ag-ui/mastra";
 import {
   CopilotRuntime,
-  ExperimentalEmptyAdapter,
   copilotRuntimeNextJSAppRouterEndpoint,
+  ExperimentalEmptyAdapter,
 } from "@copilotkit/runtime";
-import { MastraAgent } from "@ag-ui/mastra";
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { mastra } from "@/mastra";
 
 // 1. You can use any service adapter here for multi-agent support.
