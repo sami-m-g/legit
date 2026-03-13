@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["@copilotkit/runtime", "pdf-parse"],
+  serverExternalPackages: ["pdf-parse"],
 };
 
 export default nextConfig;
