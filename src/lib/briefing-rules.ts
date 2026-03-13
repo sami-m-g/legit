@@ -1,0 +1,155 @@
+// Pure classification logic — no DB dependency, fully testable.
+import type { BriefingItem } from "@/lib/types";
+import { daysUntil } from "@/lib/utils";
+
+export const COMPANY_LIABILITY_THRESHOLD = 1_000_000;
+export const LOW_CONFIDENCE_THRESHOLD = 0.7;
+
+export type ContractRow = {
+  id: string;
+  title: string | null;
+  filename: string;
+  auto_renewal: boolean | null;
+  renewal_date: string | null;
+  expiration_date: string | null;
+  liability_cap: number | null;
+  extraction_confidence: number | null;
+  action_status: string;
+};
+
+export function classifyContract(
+  row: ContractRow,
+  today: Date = new Date(),
+): BriefingItem | null {
+  const title = row.title ?? row.filename;
+  const renewalDate = row.renewal_date ? new Date(row.renewal_date) : null;
+  const expirationDate = row.expiration_date
+    ? new Date(row.expiration_date)
+    : null;
+  const daysToRenewal = renewalDate ? daysUntil(renewalDate, today) : null;
+  const daysToExpiry = expirationDate ? daysUntil(expirationDate, today) : null;
+  const {
+    auto_renewal: autoRenewal,
+    liability_cap: liabilityCap,
+    extraction_confidence: confidence,
+    action_status: actionStatus,
+    id,
+  } = row;
+
+  // URGENT: auto-renewal closing within 45 days
+  if (
+    autoRenewal &&
+    daysToRenewal !== null &&
+    daysToRenewal > 0 &&
+    daysToRenewal <= 45
+  ) {
+    return {
+      contractId: id,
+      title,
+      urgency: "urgent",
+      reason: `Auto-renews ${renewalDate?.toLocaleDateString() ?? "soon"}, cancellation window closes in ${daysToRenewal} days`,
+      primaryAction: { label: "Cancel / Terminate", status: "cancelled" },
+      secondaryAction: { label: "Snooze 7 days", status: "snoozed" },
+    };
+  }
+
+  // URGENT: expired (past expiration, still active)
+  if (daysToExpiry !== null && daysToExpiry < 0 && actionStatus === "active") {
+    return {
+      contractId: id,
+      title,
+      urgency: "urgent",
+      reason: `Expired ${Math.abs(daysToExpiry)} days ago — may have auto-renewed without approval`,
+      primaryAction: { label: "Flag for Legal Review", status: "flagged" },
+      secondaryAction: { label: "Mark Reviewed", status: "reviewed" },
+    };
+  }
+
+  // URGENT: liability cap below threshold
+  if (
+    liabilityCap !== null &&
+    liabilityCap < COMPANY_LIABILITY_THRESHOLD &&
+    actionStatus === "active"
+  ) {
+    return {
+      contractId: id,
+      title,
+      urgency: "urgent",
+      reason: `Liability cap ($${liabilityCap.toLocaleString()}) is below company threshold ($${COMPANY_LIABILITY_THRESHOLD.toLocaleString()})`,
+      primaryAction: { label: "Flag for Legal Review", status: "flagged" },
+    };
+  }
+
+  // WATCH: expiring within 90 days (non-auto-renewal)
+  if (
+    !autoRenewal &&
+    daysToExpiry !== null &&
+    daysToExpiry > 0 &&
+    daysToExpiry <= 90
+  ) {
+    return {
+      contractId: id,
+      title,
+      urgency: "watch",
+      reason: `Expires in ${daysToExpiry} days — renewal decision needed`,
+      primaryAction: { label: "Flag for Legal Review", status: "flagged" },
+      secondaryAction: { label: "Mark Reviewed", status: "reviewed" },
+    };
+  }
+
+  // WATCH: auto-renewal within 90 days (outside urgent window)
+  if (
+    autoRenewal &&
+    daysToRenewal !== null &&
+    daysToRenewal > 45 &&
+    daysToRenewal <= 90
+  ) {
+    return {
+      contractId: id,
+      title,
+      urgency: "watch",
+      reason: `Auto-renews in ${daysToRenewal} days — renegotiation window is open`,
+      primaryAction: { label: "Flag for Legal Review", status: "flagged" },
+      secondaryAction: { label: "Snooze 7 days", status: "snoozed" },
+    };
+  }
+
+  // WATCH: low confidence extraction
+  if (
+    confidence !== null &&
+    confidence < LOW_CONFIDENCE_THRESHOLD &&
+    actionStatus === "active"
+  ) {
+    return {
+      contractId: id,
+      title,
+      urgency: "watch",
+      reason: `Extracted with ${Math.round(confidence * 100)}% confidence — some fields may be incorrect`,
+      primaryAction: { label: "Verify Manually", status: "reviewed" },
+    };
+  }
+
+  // WATCH: flagged contracts
+  if (actionStatus === "flagged") {
+    return {
+      contractId: id,
+      title,
+      urgency: "watch",
+      reason: "Flagged for legal review",
+      primaryAction: { label: "Mark Reviewed", status: "reviewed" },
+    };
+  }
+
+  // INFO: recently reviewed
+  if (actionStatus === "reviewed") {
+    return {
+      contractId: id,
+      title,
+      urgency: "info",
+      reason: "Recently reviewed and actioned",
+      primaryAction: { label: "Mark Active", status: "active" },
+    };
+  }
+
+  return null;
+}
