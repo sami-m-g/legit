@@ -136,3 +136,28 @@ Five AI capabilities, none requiring novel research — existing LLM strengths c
 | PDF handling    | Text layer only      | OCR pipeline for scanned documents  |
 | Confidence      | LLM self-assessment  | Calibrated model on labeled data    |
 | Failures        | Stored as partial    | Routed to human review queue        |
+
+---
+
+## 5. What We'd Do with More Time
+
+### Phase 2: Smarter actions and deeper integrations
+
+The prototype proves the core thesis — an advisor that tells you what to do and why. Phase 2 shifts focus from *surfacing* the right information to *acting on it* with less friction.
+
+**Smarter Smart Actions.** The current one-click drafts (cancellation notices, risk summaries) are a starting point. Next: multi-step workflows — a cancellation action that checks cross-dependencies ("this vendor also supplies your SSO provider"), suggests timing based on billing cycles, and tracks follow-through. Actions should learn from edits: if legal always rewrites the liability paragraph, the next draft should reflect that.
+
+**Platform integrations.** Contracts don't live in isolation — the people acting on them work in CRMs, procurement platforms, and communication tools. Key integrations:
+
+- **CRM (Salesforce, HubSpot)** — link contracts to vendor/customer records, surface renewal alerts where relationship managers already work
+- **Procurement (Coupa, SAP Ariba)** — sync contract terms with purchase orders, flag spend against contractual limits
+- **Communication (Slack, Teams)** — push urgent briefing items and deadline reminders to channels, allow quick actions (flag, approve) without opening the app
+
+**UX polish and deeper insights.** The briefing narrative and feed work — but there's room to make them sharper:
+
+- Trend analysis over time: are risk scores improving? Is vendor concentration growing?
+- Comparative benchmarking: how do your terms compare to industry norms?
+- Personalized briefings: surface what matters to *you* based on role and past behavior, not just urgency
+- Mobile-first experience for executives who check in briefly between meetings
+
+**Confidence model maturation.** Move from LLM self-assessed confidence to a calibrated model trained on user corrections. Every "needs-review" confirmation becomes training data — the system gets more accurate and requires less human review over time.
