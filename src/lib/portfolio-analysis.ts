@@ -62,7 +62,10 @@ function groupByVendor(
       groups[vendor] = [contract];
       continue;
     }
-    const matches = stringSimilarity.diceCoefficient.sortMatch(vendor, existing);
+    const matches = stringSimilarity.diceCoefficient.sortMatch(
+      vendor,
+      existing,
+    );
     const bestMatch = matches[matches.length - 1];
     if (bestMatch.rating >= SIMILARITY_THRESHOLD) {
       groups[bestMatch.member].push(contract);
