@@ -10,19 +10,22 @@
   --bg-panel: #fffef9; /* cream white cards / panels */
   --bg-chat: #fdf6e8; /* warm tint for chat area */
   --border: oklch(0.923 0.003 48.717); /* warm parchment border */
-  --gold: #92400e; /* primary accent — warm amber/gold */
+  --gold: #b45309; /* primary accent — amber-700, warm and legible */
   --gold-muted: #78716c; /* warm stone muted text */
   --cream: #1c1917; /* primary text — warm near-black */
   --cream-dim: #44403c; /* secondary text — warm charcoal */
 
   /* Semantic extras */
   --accent-yellow: #b45309; /* deep amber CTA */
-  --on-gold: #0e0c08; /* near-black text on gold backgrounds */
+  --on-gold: #fef9f0; /* warm cream text on gold buttons */
   --bg-pdf-viewer: #2c2420; /* dark warm surround for PDF iframe */
+  --sidebar-text: #a8996e; /* warm gold-muted for sidebar inactive text */
+  --sidebar-hover: #292524; /* sidebar hover/active background */
+  --sidebar-border: #3d3530; /* sidebar separator */
 
   /* CopilotKit overrides */
   --copilot-kit-primary-color: var(--gold);
-  --copilot-kit-contrast-color: #fffef9;
+  --copilot-kit-contrast-color: var(--bg-panel);
   --copilot-kit-background-color: var(--bg-chat);
   --copilot-kit-secondary-contrast-color: #78350f;
   --copilot-kit-separator-color: var(--border);
@@ -30,6 +33,7 @@
   --copilot-kit-response-button-color: var(--gold);
   --copilot-kit-response-button-background-color: #fef3c7;
   --copilot-kit-muted-color: var(--gold-muted);
+  --font-display: "Playfair Display", Georgia, serif;
   --radius: 0.625rem;
   /* shadcn/ui vars — mapped to cream/ivory palette */
   --background: var(--bg-base);
@@ -40,11 +44,11 @@
   --popover-foreground: var(--cream);
   --primary: var(--gold);
   --primary-foreground: var(--on-gold);
-  --secondary: oklch(0.97 0.001 106.424);
+  --secondary: oklch(0.95 0.008 72); /* warm parchment, not cold green */
   --secondary-foreground: var(--cream);
-  --muted: var(--bg-panel);
+  --muted: oklch(0.92 0.012 72); /* warm linen — visible tab bar background */
   --muted-foreground: var(--cream-dim);
-  --accent: oklch(0.97 0.001 106.424);
+  --accent: oklch(0.95 0.008 72); /* warm hover, matches secondary */
   --accent-foreground: var(--cream);
   --destructive: oklch(0.577 0.245 27.325);
   --input: oklch(0.923 0.003 48.717);
@@ -107,11 +111,79 @@
 
 body {
   font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
 }
 
 body,
 html {
   height: 100%;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+/* ---- CopilotKit wrapper fix — allow children to use h-full ---- */
+.copilotKitSidebarContentWrapper {
+  height: 100vh;
+}
+
+/* ---- App sidebar ---- */
+.app-sidebar {
+  width: 240px;
+  background: var(--cream);
+  border-right: 1px solid var(--sidebar-hover);
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--sidebar-text);
+  transition:
+    background 150ms,
+    color 150ms;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  text-align: left;
+}
+
+.sidebar-nav-item:hover {
+  background: var(--sidebar-hover);
+  color: var(--on-gold);
+}
+
+.sidebar-nav-item-active {
+  background: var(--sidebar-hover);
+  color: var(--on-gold);
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 0 var(--gold);
+}
+
+/* ---- Stat metrics ---- */
+.stat-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  position: relative;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.stat-metric-accent {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 24px;
+  height: 2px;
+  background: var(--gold);
+  border-radius: 1px;
 }
 
 .dark {
@@ -146,6 +218,15 @@ html {
   --sidebar-accent-foreground: oklch(0.985 0.001 106.423);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.553 0.013 58.071);
+}
+
+/* ---- Hide scrollbar but keep scrolling ---- */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 @layer base {

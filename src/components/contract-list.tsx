@@ -1,11 +1,11 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ActionStatus, ContractSummary } from "@/lib/types";
-import { daysUntil } from "@/lib/utils";
 
 interface ContractListProps {
   onSelect: (id: string) => void;
@@ -35,45 +35,17 @@ const ACTION_BADGE: Partial<
 > = {
   flagged: {
     className: "bg-amber-100 text-amber-800 border-amber-200",
-    label: "⚑ Flagged",
+    label: "Flagged",
   },
   cancelled: {
     className: "bg-red-100 text-red-700 border-red-200",
-    label: "✕ Cancelled",
-  },
-  snoozed: {
-    className: "bg-stone-100 text-stone-600 border-stone-200",
-    label: "⏸ Snoozed",
+    label: "Cancelled",
   },
   reviewed: {
     className: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    label: "✓ Reviewed",
+    label: "Reviewed",
   },
 };
-
-function urgencyBadge(
-  c: ContractSummary,
-): { className: string; label: string } | null {
-  const date = c.renewal_date ?? c.expiration_date;
-  if (!date) return null;
-  const days = daysUntil(new Date(date));
-  if (days < 0)
-    return {
-      className: "bg-red-100 text-red-700 border-red-200",
-      label: "Expired",
-    };
-  if (days <= 45 && c.auto_renewal)
-    return {
-      className: "bg-red-100 text-red-700 border-red-200",
-      label: `Renews ${days}d`,
-    };
-  if (days <= 90)
-    return {
-      className: "bg-amber-100 text-amber-700 border-amber-200",
-      label: `${days}d`,
-    };
-  return null;
-}
 
 export function ContractList({ onSelect, refreshKey }: ContractListProps) {
   const [contracts, setContracts] = useState<ContractSummary[]>([]);
@@ -115,19 +87,23 @@ export function ContractList({ onSelect, refreshKey }: ContractListProps) {
 
   if (contracts.length === 0)
     return (
-      <p className="py-4 text-muted-foreground">No contracts uploaded yet.</p>
+      <div className="rounded-xl border border-dashed p-8 text-center bg-card">
+        <p className="text-sm font-medium text-foreground">No contracts yet</p>
+        <p className="text-xs mt-1 text-muted-foreground">
+          Drop a PDF above to get started.
+        </p>
+      </div>
     );
 
   return (
     <div className="space-y-2">
       {contracts.map((c) => {
-        const ub = urgencyBadge(c);
         const ab = c.action_status ? ACTION_BADGE[c.action_status] : null;
         const sb = STATUS_BADGE[c.status];
         return (
           <div
             key={c.id}
-            className="flex items-center gap-2 rounded-xl border bg-card transition-colors group hover:border-muted-foreground"
+            className="flex items-center gap-2 rounded-xl shadow-sm bg-card transition-shadow group hover:shadow-md"
           >
             <button
               type="button"
@@ -140,18 +116,13 @@ export function ContractList({ onSelect, refreshKey }: ContractListProps) {
                     {c.title ?? c.filename}
                   </p>
                   <p className="text-sm mt-0.5 text-muted-foreground">
-                    {c.contract_type ?? "Unknown type"} ·{" "}
+                    {c.contract_type ?? "Unknown type"} &middot;{" "}
                     {c.expiration_date
                       ? `Expires ${new Date(c.expiration_date).toLocaleDateString()}`
                       : "No expiry"}
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  {ub && (
-                    <Badge variant="outline" className={ub.className}>
-                      {ub.label}
-                    </Badge>
-                  )}
                   {ab && (
                     <Badge variant="outline" className={ab.className}>
                       {ab.label}
@@ -175,23 +146,7 @@ export function ContractList({ onSelect, refreshKey }: ContractListProps) {
               {deleting === c.id ? (
                 <span className="text-xs">…</span>
               ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-label="Delete"
-                >
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6l-1 14H6L5 6" />
-                  <path d="M10 11v6M14 11v6" />
-                  <path d="M9 6V4h6v2" />
-                </svg>
+                <Trash2 className="w-4 h-4" />
               )}
             </Button>
           </div>

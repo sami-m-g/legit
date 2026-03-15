@@ -69,6 +69,9 @@ export async function POST(request: Request) {
         key_obligations = ${JSON.stringify(extracted.key_obligations)},
         termination_clauses = ${JSON.stringify(extracted.termination_clauses)},
         extraction_confidence = ${extracted.confidence},
+        risk_score = ${extracted.risk_score},
+        risk_flags = ${JSON.stringify(extracted.risk_flags)},
+        negotiation_points = ${JSON.stringify(extracted.negotiation_points)},
         updated_at = NOW()
       WHERE id = ${contractId}
     `;

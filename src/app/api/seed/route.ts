@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { initializeDatabase, sql } from "@/lib/db";
 import { extractContractData, extractTextFromPdf } from "@/lib/extraction";
 import { SEED_FILENAMES } from "@/lib/sample-data";
+import { futureDateString } from "@/lib/utils";
 
 export async function POST() {
   if (process.env.NODE_ENV === "production") {
@@ -16,6 +17,7 @@ export async function POST() {
   try {
     await initializeDatabase();
     await sql`DELETE FROM contracts WHERE blob_url LIKE '/contracts/%'`;
+    await sql`DELETE FROM briefing_narratives`;
 
     await Promise.all(
       SEED_FILENAMES.map(async (filename) => {
@@ -24,6 +26,16 @@ export async function POST() {
         const { text, pageCount } = await extractTextFromPdf(buffer);
         const data = await extractContractData(text);
         const blobUrl = `/contracts/${filename}`;
+
+        // Force specific renewal dates for demo purposes on seeded contracts
+        const renewalOverrides: Record<string, string> = {
+          "salesforce-crm-enterprise.pdf": futureDateString(32),
+          "pipedrive-sales-crm.pdf": futureDateString(14),
+          "techstaff-recruitment.pdf": futureDateString(30),
+          "zendesk-customer-support.pdf": futureDateString(20),
+          "ironclad-legal-tech.pdf": futureDateString(-15),
+        };
+        const renewalDate = renewalOverrides[filename] ?? data.expiration_date;
 
         await sql`
           INSERT INTO contracts (
@@ -36,7 +48,7 @@ export async function POST() {
             ${data.title}, ${data.contract_type},
             ${data.parties ? JSON.stringify(data.parties) : null}::jsonb,
             ${data.effective_date}::date, ${data.expiration_date}::date,
-            ${data.expiration_date}::date, ${data.auto_renewal ?? false},
+            ${renewalDate}::date, ${data.auto_renewal ?? false},
             ${data.total_value ?? null}, ${data.liability_cap ?? null},
             ${data.confidence}, 'active',
             ${data.summary},
@@ -44,6 +56,7 @@ export async function POST() {
             ${data.termination_clauses ? JSON.stringify(data.termination_clauses) : null}::jsonb,
             ${pageCount}
           )
+          ON CONFLICT (blob_url) DO NOTHING
         `;
       }),
     );

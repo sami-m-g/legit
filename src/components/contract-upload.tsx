@@ -1,5 +1,6 @@
 "use client";
 
+import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -12,15 +13,20 @@ export function ContractUpload({ onUploadComplete }: ContractUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [statusType, setStatusType] = useState<"success" | "error" | null>(
+    null,
+  );
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function uploadFile(file: File) {
     if (file.type !== "application/pdf") {
-      setStatus("Only PDF files are supported.");
+      setStatus("Only PDF files are supported. Please select a .pdf file.");
+      setStatusType("error");
       return;
     }
     setUploading(true);
     setStatus("Uploading and extracting...");
+    setStatusType(null);
     const formData = new FormData();
     formData.append("file", file);
     try {
@@ -33,14 +39,21 @@ export function ContractUpload({ onUploadComplete }: ContractUploadProps) {
         status?: string;
         error?: string;
       };
-      setStatus(
-        res.ok
-          ? `Uploaded! Status: ${data.status}`
-          : `Error: ${data.error ?? "Upload failed"}`,
-      );
-      if (res.ok) onUploadComplete();
+      if (res.ok) {
+        setStatus(`Uploaded successfully. Status: ${data.status}`);
+        setStatusType("success");
+        onUploadComplete();
+        setTimeout(() => {
+          setStatus(null);
+          setStatusType(null);
+        }, 4000);
+      } else {
+        setStatus(`Error: ${data.error ?? "Upload failed"}`);
+        setStatusType("error");
+      }
     } catch {
       setStatus("Upload failed.");
+      setStatusType("error");
     } finally {
       setUploading(false);
     }
@@ -79,7 +92,10 @@ export function ContractUpload({ onUploadComplete }: ContractUploadProps) {
         }}
       />
       {uploading ? (
-        <p className="text-muted-foreground">⏳ {status}</p>
+        <p className="text-muted-foreground flex items-center justify-center gap-2">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          {status}
+        </p>
       ) : (
         <>
           <p className="font-medium text-foreground">
@@ -89,7 +105,24 @@ export function ContractUpload({ onUploadComplete }: ContractUploadProps) {
             </Button>
           </p>
           {status && (
-            <p className="mt-2 text-sm text-muted-foreground">{status}</p>
+            <p
+              className={cn(
+                "mt-2 text-sm flex items-center justify-center gap-1.5",
+                statusType === "success"
+                  ? "text-emerald-600"
+                  : statusType === "error"
+                    ? "text-red-600"
+                    : "text-muted-foreground",
+              )}
+            >
+              {statusType === "success" && (
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+              )}
+              {statusType === "error" && (
+                <XCircle className="w-4 h-4 shrink-0" />
+              )}
+              {status}
+            </p>
           )}
         </>
       )}

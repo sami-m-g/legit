@@ -1,9 +1,10 @@
 import { createPool } from "@vercel/postgres";
+import { env } from "@/lib/env";
 
 type Primitive = string | number | boolean | undefined | null;
 
 const pool = createPool({
-  connectionString: process.env.POSTGRES_URL,
+  connectionString: env.postgres_url,
 });
 
 export async function query(
@@ -54,5 +55,19 @@ export async function initializeDatabase() {
     query`ALTER TABLE contracts ADD COLUMN IF NOT EXISTS snoozed_until DATE`,
     query`ALTER TABLE contracts ADD COLUMN IF NOT EXISTS renewal_date DATE`,
   ]);
+  await Promise.all([
+    sql`ALTER TABLE contracts ADD COLUMN IF NOT EXISTS risk_score TEXT DEFAULT 'unknown'`,
+    sql`ALTER TABLE contracts ADD COLUMN IF NOT EXISTS risk_flags JSONB DEFAULT '[]'`,
+    sql`ALTER TABLE contracts ADD COLUMN IF NOT EXISTS negotiation_points JSONB DEFAULT '[]'`,
+  ]);
+  await sql`
+    CREATE TABLE IF NOT EXISTS briefing_narratives (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      generated_at TIMESTAMPTZ DEFAULT NOW(),
+      narrative_text TEXT NOT NULL,
+      portfolio_snapshot JSONB,
+      valid_until TIMESTAMPTZ
+    )
+  `;
   initialized = true;
 }

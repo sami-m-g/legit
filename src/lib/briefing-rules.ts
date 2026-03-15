@@ -48,8 +48,18 @@ export function classifyContract(
       title,
       urgency: "urgent",
       reason: `Auto-renews ${renewalDate?.toLocaleDateString() ?? "soon"}, cancellation window closes in ${daysToRenewal} days`,
-      primaryAction: { label: "Cancel / Terminate", status: "cancelled" },
-      secondaryAction: { label: "Snooze 7 days", status: "snoozed" },
+      recommendation:
+        "Act before the renewal window closes — check the contract's required notice period to cancel in time.",
+      primaryAction: {
+        label: "Cancel Contract",
+        status: "cancelled",
+        actionType: "cancel",
+      },
+      secondaryAction: {
+        label: "Flag for Review",
+        status: "flagged",
+        actionType: "flag",
+      },
     };
   }
 
@@ -60,8 +70,18 @@ export function classifyContract(
       title,
       urgency: "urgent",
       reason: `Expired ${Math.abs(daysToExpiry)} days ago — may have auto-renewed without approval`,
-      primaryAction: { label: "Flag for Legal Review", status: "flagged" },
-      secondaryAction: { label: "Mark Reviewed", status: "reviewed" },
+      recommendation:
+        "Determine if this contract auto-renewed without approval. Flag for legal review immediately.",
+      primaryAction: {
+        label: "Flag for Legal Review",
+        status: "flagged",
+        actionType: "flag",
+      },
+      secondaryAction: {
+        label: "Mark Reviewed",
+        status: "reviewed",
+        actionType: "review",
+      },
     };
   }
 
@@ -76,6 +96,8 @@ export function classifyContract(
       title,
       urgency: "urgent",
       reason: `Liability cap ($${liabilityCap.toLocaleString()}) is below company threshold ($${COMPANY_LIABILITY_THRESHOLD.toLocaleString()})`,
+      recommendation:
+        "Flag for legal review — your exposure exceeds company risk policy of $1M.",
       primaryAction: { label: "Flag for Legal Review", status: "flagged" },
     };
   }
@@ -92,8 +114,18 @@ export function classifyContract(
       title,
       urgency: "watch",
       reason: `Expires in ${daysToExpiry} days — renewal decision needed`,
-      primaryAction: { label: "Flag for Legal Review", status: "flagged" },
-      secondaryAction: { label: "Mark Reviewed", status: "reviewed" },
+      recommendation:
+        "Decide now whether to renew, renegotiate, or let this lapse. Start vendor conversations early.",
+      primaryAction: {
+        label: "Plan Renewal",
+        status: "flagged",
+        actionType: "renew",
+      },
+      secondaryAction: {
+        label: "Mark Reviewed",
+        status: "reviewed",
+        actionType: "review",
+      },
     };
   }
 
@@ -109,8 +141,14 @@ export function classifyContract(
       title,
       urgency: "watch",
       reason: `Auto-renews in ${daysToRenewal} days — renegotiation window is open`,
+      recommendation:
+        "Mark your calendar — the cancellation window opens soon. Review terms before it closes.",
       primaryAction: { label: "Flag for Legal Review", status: "flagged" },
-      secondaryAction: { label: "Snooze 7 days", status: "snoozed" },
+      secondaryAction: {
+        label: "Flag for Review",
+        status: "flagged",
+        actionType: "flag",
+      },
     };
   }
 
@@ -124,7 +162,9 @@ export function classifyContract(
       contractId: id,
       title,
       urgency: "watch",
-      reason: `Extracted with ${Math.round(confidence * 100)}% confidence — some fields may be incorrect`,
+      reason: "Extraction needs review — some fields may be incorrect",
+      recommendation:
+        "This contract's data was extracted with low confidence. Verify key dates, values, and terms against the PDF.",
       primaryAction: { label: "Verify Manually", status: "reviewed" },
     };
   }
@@ -136,6 +176,7 @@ export function classifyContract(
       title,
       urgency: "watch",
       reason: "Flagged for legal review",
+      recommendation: "This contract is awaiting legal review.",
       primaryAction: { label: "Mark Reviewed", status: "reviewed" },
     };
   }
@@ -147,6 +188,7 @@ export function classifyContract(
       title,
       urgency: "info",
       reason: "Recently reviewed and actioned",
+      recommendation: "No action needed — this contract was recently reviewed.",
       primaryAction: { label: "Mark Active", status: "active" },
     };
   }

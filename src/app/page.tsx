@@ -1,17 +1,21 @@
 "use client";
 
-import { useCoAgent } from "@copilotkit/react-core";
-import { CopilotSidebar } from "@copilotkit/react-ui";
+import { useCoAgent, useCopilotReadable } from "@copilotkit/react-core";
+import {
+  CopilotSidebar,
+  useCopilotChatSuggestions,
+} from "@copilotkit/react-ui";
+import { Database, FileText, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BriefingFeed } from "@/components/briefing-feed";
+import { BriefingNarrative } from "@/components/briefing-narrative";
 import { ContractList } from "@/components/contract-list";
 import { ContractUpload } from "@/components/contract-upload";
 import { ContractViewer } from "@/components/contract-viewer";
-import { RenewalsTimeline } from "@/components/renewals-timeline";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { VendorGroups } from "@/components/vendor-groups";
+import { Separator } from "@/components/ui/separator";
 import type { AgentState, ContractSummary } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export default function ContractIntelligencePage() {
   const [selectedContractId, setSelectedContractId] = useState<string | null>(
@@ -20,10 +24,29 @@ export default function ContractIntelligencePage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [contracts, setContracts] = useState<ContractSummary[]>([]);
   const [seeding, setSeeding] = useState(false);
+  const [activePage, setActivePage] = useState<"action-center" | "contracts">(
+    "action-center",
+  );
 
   const { setState } = useCoAgent<AgentState>({
     name: "contractAgent",
     initialState: { lastSearchResults: [], currentContractId: null },
+  });
+
+  useCopilotReadable({
+    description: "The user's contract portfolio overview",
+    value: {
+      contractCount: contracts.length,
+      view: selectedContractId ? "contract-detail" : "dashboard",
+    },
+  });
+
+  useCopilotChatSuggestions({
+    instructions: selectedContractId
+      ? "The user is viewing a specific contract. Suggest 3-4 focused questions about that contract's risks, terms, obligations, and renewal options."
+      : "The user is on the contract dashboard. Suggest 3-4 questions about portfolio health, upcoming renewals, risk exposure, and vendor relationships.",
+    minSuggestions: 3,
+    maxSuggestions: 4,
   });
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: refreshKey is an intentional trigger
@@ -106,8 +129,11 @@ export default function ContractIntelligencePage() {
     );
   }
 
+  const pageTitle =
+    activePage === "action-center" ? "Action Center" : "Contracts";
+
   return (
-    <main>
+    <main className="flex h-screen overflow-hidden">
       <CopilotSidebar
         disableSystemMessage={true}
         clickOutsideToClose={false}
@@ -132,76 +158,111 @@ export default function ContractIntelligencePage() {
           },
         ]}
       >
-        <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                Contract Command Center
+        <div className="flex h-full w-full">
+          {/* Left sidebar */}
+          <aside className="app-sidebar flex flex-col h-full shrink-0">
+            {/* Branding */}
+            <div className="px-5 pt-5 pb-4">
+              <h1 className="font-display text-lg font-semibold tracking-tight text-[var(--on-gold)]">
+                Legit Counsel
               </h1>
-              <p className="mt-1 text-muted-foreground">
-                Your contracts, prioritized by what needs attention.
+              <p className="text-xs text-[var(--sidebar-text)] mt-0.5">
+                {new Date().toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSeed}
-              disabled={seeding}
-              className="shrink-0"
+
+            {/* Navigation */}
+            <nav className="flex-1 px-3 space-y-1">
+              <button
+                type="button"
+                onClick={() => setActivePage("action-center")}
+                className={cn(
+                  "sidebar-nav-item",
+                  activePage === "action-center" && "sidebar-nav-item-active",
+                )}
+              >
+                <Zap className="w-4 h-4 shrink-0" />
+                Action Center
+              </button>
+              <button
+                type="button"
+                onClick={() => setActivePage("contracts")}
+                className={cn(
+                  "sidebar-nav-item",
+                  activePage === "contracts" && "sidebar-nav-item-active",
+                )}
+              >
+                <FileText className="w-4 h-4 shrink-0" />
+                Contracts
+              </button>
+            </nav>
+
+            {/* Seed button */}
+            <div className="px-3 pb-4">
+              <Separator className="mb-3 bg-[var(--sidebar-border)]" />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSeed}
+                disabled={seeding}
+                className="w-full justify-start gap-2 text-[var(--sidebar-text)] hover:text-[var(--on-gold)] hover:bg-[var(--sidebar-hover)]"
+              >
+                <Database className="w-4 h-4 shrink-0" />
+                {seeding ? "Seeding\u2026" : "Load sample data"}
+              </Button>
+            </div>
+          </aside>
+
+          {/* Content area */}
+          <div className="flex flex-col flex-1 min-w-0 min-h-0">
+            <header className="px-8 pt-6 pb-4 shrink-0">
+              <h2 className="font-display text-xl font-semibold tracking-tight text-foreground">
+                {pageTitle}
+              </h2>
+            </header>
+            {/* Action Center page */}
+            <div
+              className={cn(
+                "flex flex-col flex-1 min-h-0",
+                activePage !== "action-center" && "hidden",
+              )}
             >
-              {seeding ? "Seeding…" : "Load sample data"}
-            </Button>
+              {/* Briefing — pinned to top */}
+              <div className="px-8 pb-4 shrink-0">
+                <BriefingNarrative refreshKey={refreshKey} />
+              </div>
+              {/* Feed — scrollable, no visible scrollbar */}
+              <div className="flex-1 overflow-y-auto scrollbar-hide px-8 pb-8">
+                <BriefingFeed
+                  onViewContract={handleSelectContract}
+                  refreshKey={refreshKey}
+                  onRefreshNeeded={() => setRefreshKey((k) => k + 1)}
+                />
+              </div>
+            </div>
+            {/* Contracts page */}
+            <div
+              className={cn(
+                "flex-1 overflow-y-auto scrollbar-hide px-8 pb-8",
+                activePage !== "contracts" && "hidden",
+              )}
+            >
+              <div className="space-y-6">
+                <ContractUpload
+                  onUploadComplete={() => setRefreshKey((k) => k + 1)}
+                />
+                <ContractList
+                  onSelect={handleSelectContract}
+                  refreshKey={refreshKey}
+                />
+              </div>
+            </div>
           </div>
-
-          {/* Smart Briefing Feed */}
-          <div>
-            <h2 className="text-xs font-semibold uppercase tracking-wide mb-3 text-primary">
-              Today's Briefing
-            </h2>
-            <BriefingFeed
-              onViewContract={handleSelectContract}
-              refreshKey={refreshKey}
-            />
-          </div>
-
-          {/* Upload */}
-          <ContractUpload
-            onUploadComplete={() => setRefreshKey((k) => k + 1)}
-          />
-
-          {/* Lens Tabs */}
-          <Tabs defaultValue="all">
-            <TabsList className="w-full">
-              <TabsTrigger value="all" className="flex-1">
-                All Contracts
-              </TabsTrigger>
-              <TabsTrigger value="renewals" className="flex-1">
-                Renewals
-              </TabsTrigger>
-              <TabsTrigger value="vendors" className="flex-1">
-                By Vendor
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="all" className="mt-4">
-              <ContractList
-                onSelect={handleSelectContract}
-                refreshKey={refreshKey}
-              />
-            </TabsContent>
-            <TabsContent value="renewals" className="mt-4">
-              <RenewalsTimeline
-                contracts={contracts}
-                onSelect={handleSelectContract}
-              />
-            </TabsContent>
-            <TabsContent value="vendors" className="mt-4">
-              <VendorGroups
-                contracts={contracts}
-                onSelect={handleSelectContract}
-              />
-            </TabsContent>
-          </Tabs>
         </div>
       </CopilotSidebar>
     </main>

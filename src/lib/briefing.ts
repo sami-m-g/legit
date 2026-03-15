@@ -1,10 +1,20 @@
 import type { ContractRow } from "@/lib/briefing-rules";
 import { classifyContract } from "@/lib/briefing-rules";
 import { sql } from "@/lib/db";
-import type { BriefingItem } from "@/lib/types";
+import type { BriefingItem, ContractSummary } from "@/lib/types";
 
-export type { ContractRow } from "@/lib/briefing-rules";
-export { classifyContract } from "@/lib/briefing-rules";
+export async function getActiveContractSummaries(): Promise<ContractSummary[]> {
+  const result = await sql`
+    SELECT id, filename, title, contract_type, status, upload_date,
+           expiration_date, renewal_date, auto_renewal, action_status,
+           parties
+    FROM contracts
+    WHERE action_status != 'cancelled'
+    ORDER BY upload_date DESC
+    LIMIT 100
+  `;
+  return result.rows as ContractSummary[];
+}
 
 export async function getBriefingItems(): Promise<BriefingItem[]> {
   const today = new Date();
@@ -12,10 +22,9 @@ export async function getBriefingItems(): Promise<BriefingItem[]> {
   const result = await sql`
     SELECT id, title, filename, contract_type, auto_renewal,
            expiration_date, renewal_date, liability_cap,
-           extraction_confidence, action_status, snoozed_until
+           extraction_confidence, action_status
     FROM contracts
     WHERE action_status != 'cancelled'
-      AND (snoozed_until IS NULL OR snoozed_until < NOW())
     ORDER BY expiration_date ASC NULLS LAST
   `;
 

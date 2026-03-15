@@ -20,6 +20,27 @@ const VALID_RESPONSE = {
   confidence: 0.92,
 };
 
+const RISK_RESPONSE = {
+  ...VALID_RESPONSE,
+  risk_score: "high",
+  risk_flags: [
+    {
+      clause: "Liability",
+      quote: "Vendor shall not be liable for any damages whatsoever",
+      risk: "Uncapped liability waiver",
+      explanation: "Company has no recourse for damages",
+      severity: "critical",
+    },
+  ],
+  negotiation_points: [
+    {
+      point: "Liability cap",
+      leverage: "Industry standard requires mutual caps",
+      recommendation: "Negotiate a mutual liability cap equal to fees paid",
+    },
+  ],
+};
+
 describe("extractContractData", () => {
   const originalFetch = globalThis.fetch;
 
@@ -94,5 +115,47 @@ describe("extractContractData", () => {
 
     expect(result.title).toBe("Test SaaS Agreement");
     expect(result.confidence).toBe(0.92);
+  });
+});
+
+describe("extractContractData — risk fields", () => {
+  const originalFetch = globalThis.fetch;
+
+  beforeEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("returns risk_score, risk_flags, and negotiation_points when LLM returns those fields", async () => {
+    globalThis.fetch = mock(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({ response: JSON.stringify(RISK_RESPONSE) }),
+          { status: 200 },
+        ),
+      ),
+    ) as unknown as typeof fetch;
+
+    const result = await extractContractData("contract text here");
+
+    expect(result.risk_score).toBe("high");
+    expect(result.risk_flags).toHaveLength(1);
+    expect(result.risk_flags[0].severity).toBe("critical");
+    expect(result.negotiation_points).toHaveLength(1);
+  });
+
+  it("returns empty risk_flags, negotiation_points, and risk_score unknown when extraction fails", async () => {
+    globalThis.fetch = mock(() =>
+      Promise.resolve(new Response("", { status: 500 })),
+    ) as unknown as typeof fetch;
+
+    const result = await extractContractData("contract text here");
+
+    expect(result.risk_score).toBe("unknown");
+    expect(result.risk_flags).toEqual([]);
+    expect(result.negotiation_points).toEqual([]);
   });
 });

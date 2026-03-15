@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { getBriefingItems } from "@/lib/briefing";
 import { initializeDatabase } from "@/lib/db";
+import { generateNarrativeBriefing } from "@/lib/narrative";
 import {
   computePortfolioIntelligence,
   getPortfolioRows,
@@ -16,16 +16,17 @@ export async function GET() {
     ]);
 
     const intelligence = computePortfolioIntelligence(portfolioRows);
-
-    return NextResponse.json({
+    const briefing = await generateNarrativeBriefing(
       items,
       intelligence,
-      contractCount: portfolioRows.length,
-    });
+      portfolioRows.length,
+    );
+
+    return Response.json(briefing);
   } catch (error) {
-    console.error("Briefing error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch briefing" },
+    console.error("Narrative briefing error:", error);
+    return Response.json(
+      { error: "Failed to generate narrative" },
       { status: 500 },
     );
   }

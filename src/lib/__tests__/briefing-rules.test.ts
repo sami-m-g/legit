@@ -33,6 +33,9 @@ describe("classifyContract — urgent rules", () => {
     );
     expect(item?.urgency).toBe("urgent");
     expect(item?.reason).toContain("cancellation window closes in 30 days");
+    expect(item?.recommendation).toBeTruthy();
+    expect(item?.secondaryAction?.label).toBe("Flag for Review");
+    expect(item?.secondaryAction?.actionType).toBe("flag");
   });
 
   it("does NOT flag urgent when auto-renewal is exactly 46 days away", () => {
@@ -65,6 +68,7 @@ describe("classifyContract — urgent rules", () => {
     expect(item?.urgency).toBe("urgent");
     expect(item?.reason).toContain("$500,000");
     expect(item?.reason).toContain("$1,000,000");
+    expect(item?.recommendation).toBeTruthy();
   });
 });
 
@@ -85,6 +89,8 @@ describe("classifyContract — watch rules", () => {
     );
     expect(item?.urgency).toBe("watch");
     expect(item?.reason).toContain("renegotiation window is open");
+    expect(item?.secondaryAction?.label).toBe("Flag for Review");
+    expect(item?.secondaryAction?.actionType).toBe("flag");
   });
 
   it("flags watch for low extraction confidence", () => {
@@ -93,7 +99,8 @@ describe("classifyContract — watch rules", () => {
       TODAY,
     );
     expect(item?.urgency).toBe("watch");
-    expect(item?.reason).toContain("55% confidence");
+    expect(item?.reason).toContain("needs review");
+    expect(item?.recommendation).toBeTruthy();
   });
 
   it("flags watch for flagged action_status", () => {

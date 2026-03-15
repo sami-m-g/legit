@@ -1,28 +1,6 @@
-import pdfParse from "pdf-parse";
+import { PDFParse } from "pdf-parse";
 import { z } from "zod";
 import { extractionAgent } from "@/mastra/agents/extractionAgent";
-
-export interface ExtractedContractData {
-  title: string | null;
-  contract_type: string | null;
-  parties: Array<{ name: string; role: string }> | null;
-  effective_date: string | null;
-  expiration_date: string | null;
-  auto_renewal: boolean | null;
-  total_value: number | null;
-  liability_cap: number | null;
-  summary: string | null;
-  key_obligations: Array<{
-    description: string;
-    party: string;
-    deadline: string;
-  }> | null;
-  termination_clauses: Array<{
-    description: string;
-    notice_period: string;
-  }> | null;
-  confidence: number;
-}
 
 const extractionSchema = z.object({
   title: z.string().nullable(),
@@ -52,13 +30,39 @@ const extractionSchema = z.object({
     )
     .nullable(),
   confidence: z.number(),
+  risk_score: z
+    .enum(["low", "medium", "high", "critical", "unknown"])
+    .default("unknown"),
+  risk_flags: z
+    .array(
+      z.object({
+        clause: z.string(),
+        quote: z.string(),
+        risk: z.string(),
+        explanation: z.string(),
+        severity: z.enum(["critical", "high", "medium", "low"]),
+      }),
+    )
+    .default([]),
+  negotiation_points: z
+    .array(
+      z.object({
+        point: z.string(),
+        leverage: z.string(),
+        recommendation: z.string(),
+      }),
+    )
+    .default([]),
 });
+
+export type ExtractedContractData = z.infer<typeof extractionSchema>;
 
 export async function extractTextFromPdf(
   buffer: Buffer,
 ): Promise<{ text: string; pageCount: number }> {
-  const result = await pdfParse(buffer);
-  return { text: result.text, pageCount: result.numpages };
+  const parser = new PDFParse({ data: new Uint8Array(buffer) });
+  const result = await parser.getText();
+  return { text: result.text, pageCount: result.total };
 }
 
 export async function extractContractData(
@@ -79,8 +83,13 @@ export async function extractContractData(
   "summary": "2-3 sentence summary",
   "key_obligations": [{"description": "obligation", "party": "responsible party", "deadline": "deadline or ongoing"}],
   "termination_clauses": [{"description": "termination condition", "notice_period": "notice required"}],
-  "confidence": 0.0 to 1.0
+  "confidence": 0.0 to 1.0,
+  "risk_score": "low|medium|high|critical|unknown — overall risk assessment for this contract",
+  "risk_flags": [{"clause": "clause name/section", "quote": "exact quote from contract", "risk": "short risk label", "explanation": "plain-English what this means for the company", "severity": "critical|high|medium|low"}],
+  "negotiation_points": [{"point": "what to negotiate", "leverage": "why you have leverage", "recommendation": "specific recommended action"}]
 }
+
+Risk flags to look for: unlimited/uncapped liability, broad indemnification, unilateral price increase rights, auto-renewal with no cancellation window, missing liability caps, vague one-sided termination rights, unfavorable IP/data ownership clauses.
 
 Contract text:
 ${truncatedText}`;
@@ -112,5 +121,8 @@ function fallbackExtraction(): ExtractedContractData {
     key_obligations: null,
     termination_clauses: null,
     confidence: 0,
+    risk_score: "unknown",
+    risk_flags: [],
+    negotiation_points: [],
   };
 }
