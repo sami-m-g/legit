@@ -1,4 +1,4 @@
-import stringSimilarity from "string-similarity";
+import stringSimilarity from "string-comparison";
 import type { CrossVendorContext, PortfolioContractRow } from "./types";
 import { getVendorName, SIMILARITY_THRESHOLD } from "./vendor-utils";
 
@@ -18,7 +18,7 @@ export function getCrossVendorContext(
     for (const c of others) {
       const vendor = getVendorName(c);
       if (!vendor) continue;
-      const score = stringSimilarity.compareTwoStrings(
+      const score = stringSimilarity.diceCoefficient.similarity(
         targetVendor.toLowerCase(),
         vendor.toLowerCase(),
       );

@@ -1,4 +1,4 @@
-import stringSimilarity from "string-similarity";
+import stringSimilarity from "string-comparison";
 import { sql } from "./db";
 import type {
   LiabilityOutlierResult,
@@ -62,9 +62,10 @@ function groupByVendor(
       groups[vendor] = [contract];
       continue;
     }
-    const { bestMatch } = stringSimilarity.findBestMatch(vendor, existing);
+    const matches = stringSimilarity.diceCoefficient.sortMatch(vendor, existing);
+    const bestMatch = matches[matches.length - 1];
     if (bestMatch.rating >= SIMILARITY_THRESHOLD) {
-      groups[bestMatch.target].push(contract);
+      groups[bestMatch.member].push(contract);
     } else {
       groups[vendor] = [contract];
     }
