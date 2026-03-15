@@ -65,7 +65,8 @@
     "hookify@claude-plugins-official": true,
     "vercel@claude-plugins-official": true,
     "learning-output-style@claude-plugins-official": true,
-    "serena@claude-plugins-official": true
+    "serena@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true
   },
   "effortLevel": "medium"
 }
