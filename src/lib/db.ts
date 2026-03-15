@@ -21,6 +21,11 @@ export async function query(
 
 export const sql = query;
 
+/** Execute a raw parameterized query (for dynamic SQL that can't use tagged templates). */
+export async function rawQuery(text: string, values: unknown[]) {
+  return await getPool().query(text, values);
+}
+
 let initialized = false;
 
 export async function initializeDatabase() {

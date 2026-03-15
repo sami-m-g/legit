@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { NarrativeBriefing } from "@/lib/narrative";
 import type { PortfolioIntelligence } from "@/lib/types";
+import { formatDollarShort } from "@/lib/utils";
 
 interface BriefingNarrativeProps {
   refreshKey: number;
@@ -78,14 +79,27 @@ function getPortfolioFlags(
     });
   }
   if (intelligence.termsInconsistency.flagged) {
+    const rawMultiplier = Math.round(
+      (intelligence.termsInconsistency.range?.max ?? 0) /
+        (intelligence.termsInconsistency.range?.min ?? 1),
+    );
+    const multiplierDisplay = rawMultiplier > 5 ? "5x+" : `${rawMultiplier}x`;
+    const rangeDisplay = intelligence.termsInconsistency.range
+      ? ` (${formatDollarShort(intelligence.termsInconsistency.range.min)}–${formatDollarShort(intelligence.termsInconsistency.range.max)})`
+      : "";
     flags.push({
-      label: `Inconsistent ${intelligence.termsInconsistency.type} terms (${intelligence.termsInconsistency.metric === "liability_cap" ? "liability caps" : "values"} vary ${Math.round((intelligence.termsInconsistency.range?.max ?? 0) / (intelligence.termsInconsistency.range?.min ?? 1))}x)`,
+      label: `Inconsistent ${intelligence.termsInconsistency.type} terms — ${intelligence.termsInconsistency.metric === "liability_cap" ? "liability caps" : "values"} vary ${multiplierDisplay}${rangeDisplay}`,
       type: "terms",
     });
   }
   if (intelligence.liabilityOutlier.flagged) {
+    const deviation = intelligence.liabilityOutlier.deviationPct ?? 0;
+    const deviationDisplay = deviation > 80 ? "80%+" : `${deviation}%`;
+    const capDisplay = intelligence.liabilityOutlier.cap
+      ? ` (${formatDollarShort(intelligence.liabilityOutlier.cap)})`
+      : "";
     flags.push({
-      label: `Liability outlier: ${intelligence.liabilityOutlier.contractTitle} (${intelligence.liabilityOutlier.deviationPct}% below peer avg)`,
+      label: `Liability outlier: ${intelligence.liabilityOutlier.contractTitle}${capDisplay} — ${deviationDisplay} below peer avg`,
       type: "liability",
     });
   }
@@ -143,22 +157,7 @@ export function BriefingNarrative({ refreshKey }: BriefingNarrativeProps) {
     fetchData();
   }, [refreshKey, fetchData]);
 
-  if (loading) {
-    return (
-      <Card className="px-5 py-3 space-y-2">
-        <Skeleton className="h-4 w-36" />
-        <div className="grid grid-cols-4 gap-3">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-        </div>
-        <Skeleton className="h-12 w-full" />
-      </Card>
-    );
-  }
-
-  if (!data || data.contractCount === 0) {
+  if (!loading && (!data || data.contractCount === 0)) {
     return (
       <Card className="px-5 py-4 text-center">
         <p className="text-sm text-muted-foreground">
@@ -168,30 +167,43 @@ export function BriefingNarrative({ refreshKey }: BriefingNarrativeProps) {
     );
   }
 
-  const urgentCount =
-    narrative?.stats.urgentCount ??
-    (data.items as Array<{ urgency: string }>).filter(
-      (i) => i.urgency === "urgent",
-    ).length;
-  const watchCount =
-    narrative?.stats.watchCount ??
-    (data.items as Array<{ urgency: string }>).filter(
-      (i) => i.urgency === "watch",
-    ).length;
-  const flags = getPortfolioFlags(data.intelligence);
+  const urgentCount = loading
+    ? 0
+    : (narrative?.stats.urgentCount ??
+      (data?.items as Array<{ urgency: string }>).filter(
+        (i) => i.urgency === "urgent",
+      ).length);
+  const watchCount = loading
+    ? 0
+    : (narrative?.stats.watchCount ??
+      (data?.items as Array<{ urgency: string }>).filter(
+        (i) => i.urgency === "watch",
+      ).length);
+  const flags = data ? getPortfolioFlags(data.intelligence) : [];
 
   return (
-    <Card className="px-5 py-3 space-y-2">
+    <Card className="px-5 py-3 space-y-2 overflow-hidden">
       <h2 className="text-xs font-semibold uppercase tracking-wide text-primary">
         Portfolio Overview
       </h2>
 
       {/* Stat metrics — editorial grid */}
       <div className="grid grid-cols-4 gap-3">
-        <StatMetric label="Contracts" value={data.contractCount} />
-        <StatMetric label="Urgent" value={urgentCount} accent />
-        <StatMetric label="Watch" value={watchCount} />
-        <StatMetric label="Flags" value={flags.length} />
+        {loading ? (
+          ["contracts", "urgent", "watch", "flags"].map((key) => (
+            <div key={key} className="stat-metric">
+              <Skeleton className="h-6 w-10" />
+              <Skeleton className="h-3 w-14 mt-1" />
+            </div>
+          ))
+        ) : (
+          <>
+            <StatMetric label="Contracts" value={data?.contractCount ?? 0} />
+            <StatMetric label="Urgent" value={urgentCount} accent />
+            <StatMetric label="Watch" value={watchCount} />
+            <StatMetric label="Flags" value={flags.length} />
+          </>
+        )}
       </div>
 
       {/* Portfolio flag chips — unified muted style */}
@@ -208,8 +220,11 @@ export function BriefingNarrative({ refreshKey }: BriefingNarrativeProps) {
       )}
 
       {/* Narrative — numbered priorities */}
-      {narrativeLoading ? (
+      {loading || narrativeLoading ? (
         <div className="space-y-2">
+          <p className="text-xs text-muted-foreground animate-pulse">
+            {loading ? "Loading portfolio data..." : "Generating briefing..."}
+          </p>
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-5/6" />
           <Skeleton className="h-4 w-4/6" />

@@ -21,6 +21,13 @@ export function getConfidenceStatus(
   return confidence >= LOW_CONFIDENCE_THRESHOLD ? "verified" : "needs-review";
 }
 
+/** Formats a dollar amount with K/M suffixes for compact display. */
+export function formatDollarShort(value: number): string {
+  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
+  return `$${value.toLocaleString()}`;
+}
+
 /** Returns an ISO date string `days` days from today. */
 export function futureDateString(days: number): string {
   const d = new Date();

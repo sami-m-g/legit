@@ -219,7 +219,7 @@ export default function ContractIntelligencePage() {
           </aside>
 
           {/* Content area */}
-          <div className="flex flex-col flex-1 min-w-0 min-h-0">
+          <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
             <header className="px-8 pt-6 pb-4 shrink-0">
               <h2 className="font-display text-xl font-semibold tracking-tight text-foreground">
                 {pageTitle}

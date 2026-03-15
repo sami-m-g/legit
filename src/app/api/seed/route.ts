@@ -42,7 +42,8 @@ export async function POST() {
             filename, blob_url, blob_download_url, status, title, contract_type,
             parties, effective_date, expiration_date, renewal_date, auto_renewal,
             total_value, liability_cap, extraction_confidence, action_status,
-            summary, key_obligations, termination_clauses, page_count
+            summary, key_obligations, termination_clauses, page_count,
+            risk_score, risk_flags, negotiation_points
           ) VALUES (
             ${filename}, ${blobUrl}, ${blobUrl}, 'extracted',
             ${data.title}, ${data.contract_type},
@@ -54,7 +55,10 @@ export async function POST() {
             ${data.summary},
             ${data.key_obligations ? JSON.stringify(data.key_obligations) : null}::jsonb,
             ${data.termination_clauses ? JSON.stringify(data.termination_clauses) : null}::jsonb,
-            ${pageCount}
+            ${pageCount},
+            ${data.risk_score ?? null},
+            ${data.risk_flags ? JSON.stringify(data.risk_flags) : null}::jsonb,
+            ${data.negotiation_points ? JSON.stringify(data.negotiation_points) : null}::jsonb
           )
           ON CONFLICT (blob_url) DO NOTHING
         `;

@@ -95,7 +95,7 @@ describe("classifyContract — watch rules", () => {
 
   it("flags watch for low extraction confidence", () => {
     const item = classifyContract(
-      baseRow({ extraction_confidence: 0.55 }),
+      baseRow({ extraction_confidence: 0.4 }),
       TODAY,
     );
     expect(item?.urgency).toBe("watch");

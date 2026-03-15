@@ -96,7 +96,10 @@ export function BriefingFeed({
 
   if (loading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
+        <p className="text-xs text-muted-foreground animate-pulse">
+          Loading action items...
+        </p>
         <Skeleton className="h-20 w-full" />
         <Skeleton className="h-20 w-full" />
         <Skeleton className="h-20 w-full" />
@@ -135,7 +138,7 @@ export function BriefingFeed({
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto min-h-0 space-y-8 pr-3">
+    <div className="space-y-8">
       {sections.map(({ key, label, items: sectionItems }) =>
         sectionItems.length > 0 ? (
           <div key={key}>

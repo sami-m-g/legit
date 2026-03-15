@@ -3,7 +3,7 @@ import type { BriefingItem } from "@/lib/types";
 import { daysUntil } from "@/lib/utils";
 
 export const COMPANY_LIABILITY_THRESHOLD = 1_000_000;
-export const LOW_CONFIDENCE_THRESHOLD = 0.7;
+export const LOW_CONFIDENCE_THRESHOLD = 0.55;
 
 export type ContractRow = {
   id: string;
@@ -98,7 +98,11 @@ export function classifyContract(
       reason: `Liability cap ($${liabilityCap.toLocaleString()}) is below company threshold ($${COMPANY_LIABILITY_THRESHOLD.toLocaleString()})`,
       recommendation:
         "Flag for legal review — your exposure exceeds company risk policy of $1M.",
-      primaryAction: { label: "Flag for Legal Review", status: "flagged" },
+      primaryAction: {
+        label: "Flag for Legal Review",
+        status: "flagged",
+        actionType: "flag",
+      },
     };
   }
 
@@ -143,7 +147,11 @@ export function classifyContract(
       reason: `Auto-renews in ${daysToRenewal} days — renegotiation window is open`,
       recommendation:
         "Mark your calendar — the cancellation window opens soon. Review terms before it closes.",
-      primaryAction: { label: "Flag for Legal Review", status: "flagged" },
+      primaryAction: {
+        label: "Flag for Legal Review",
+        status: "flagged",
+        actionType: "flag",
+      },
       secondaryAction: {
         label: "Flag for Review",
         status: "flagged",
@@ -165,7 +173,11 @@ export function classifyContract(
       reason: "Extraction needs review — some fields may be incorrect",
       recommendation:
         "This contract's data was extracted with low confidence. Verify key dates, values, and terms against the PDF.",
-      primaryAction: { label: "Verify Manually", status: "reviewed" },
+      primaryAction: {
+        label: "Verify Manually",
+        status: "reviewed",
+        actionType: "verify",
+      },
     };
   }
 

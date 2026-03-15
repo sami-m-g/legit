@@ -9,9 +9,14 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import { DraftDialog } from "@/components/draft-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  DRAFT_ACTION_LABELS,
+  DRAFT_DIALOG_TITLES,
+} from "@/lib/draft-constants";
 import type {
   ActionStatus,
   BriefingActionType,
@@ -54,11 +59,6 @@ const URGENCY: Record<
 
 const BODY_INDENT = "pl-6";
 
-const DRAFT_ACTION_LABELS: Partial<Record<BriefingActionType, string>> = {
-  cancel: "Generating cancellation notice...",
-  renew: "Generating renewal strategy...",
-};
-
 interface BriefingCardProps {
   item: BriefingItem;
   onAction: (contractId: string, status: ActionStatus) => void;
@@ -71,19 +71,28 @@ type ExecuteResult = {
 };
 
 export function BriefingCard({ item, onAction, onView }: BriefingCardProps) {
-  const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [result, setResult] = useState<ExecuteResult | null>(null);
   const [draftText, setDraftText] = useState("");
+  const [draftActionType, setDraftActionType] =
+    useState<BriefingActionType | null>(null);
 
   const cfg = URGENCY[item.urgency];
 
   async function handlePrimaryClick() {
     const { actionType } = item.primaryAction;
 
-    // For actions with drafts (cancel/renew), expand inline
-    if (actionType && (actionType === "cancel" || actionType === "renew")) {
-      setExpanded(true);
+    // For verify, navigate to contract viewer
+    if (actionType === "verify") {
+      onView(item.contractId);
+      return;
+    }
+
+    // For actions with drafts, fetch and open dialog
+    if (actionType && actionType in DRAFT_ACTION_LABELS) {
+      setDraftActionType(actionType);
+      setDialogOpen(true);
       setLoading(true);
       try {
         const res = await fetch(
@@ -111,14 +120,15 @@ export function BriefingCard({ item, onAction, onView }: BriefingCardProps) {
   }
 
   function handleConfirm() {
-    // Card dismisses from feed
+    setDialogOpen(false);
     onAction(item.contractId, item.primaryAction.status);
   }
 
-  function handleCancel() {
-    setExpanded(false);
+  function handleDialogClose() {
+    setDialogOpen(false);
     setResult(null);
     setDraftText("");
+    setDraftActionType(null);
   }
 
   function handleViewClick() {
@@ -126,105 +136,95 @@ export function BriefingCard({ item, onAction, onView }: BriefingCardProps) {
   }
 
   return (
-    <Card
-      className={`flex flex-col gap-3 p-5 border-0 shadow-sm ${cfg.borderClass}`}
-    >
-      {/* Header row */}
-      <div className="flex items-start gap-2">
-        <cfg.Icon className={`w-4 h-4 mt-0.5 shrink-0 ${cfg.iconClass}`} />
-        <p className="flex-1 min-w-0 font-medium truncate text-foreground">
-          {item.title}
-        </p>
-        <Badge variant="outline" className={`shrink-0 ${cfg.badgeClass}`}>
-          {cfg.label}
-        </Badge>
-      </div>
-
-      {/* Body text */}
-      <p className={`text-sm text-muted-foreground ${BODY_INDENT}`}>
-        {item.reason}
-      </p>
-      {item.recommendation && (
-        <p className={`text-xs text-muted-foreground italic ${BODY_INDENT}`}>
-          {item.recommendation}
-        </p>
-      )}
-
-      {/* Inline expansion for draft actions */}
-      {expanded && (
-        <div className={`${BODY_INDENT} space-y-3`}>
-          {loading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              {(item.primaryAction.actionType &&
-                DRAFT_ACTION_LABELS[item.primaryAction.actionType]) ??
-                "Processing..."}
-            </div>
-          ) : (
-            <>
-              <textarea
-                value={draftText}
-                onChange={(e) => setDraftText(e.target.value)}
-                className="w-full min-h-[120px] rounded-lg border bg-muted/30 p-3 text-sm font-mono resize-y focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-              {result?.crossVendorContext?.sameVendor &&
-                result.crossVendorContext.sameVendor.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Related: {result.crossVendorContext.sameVendor.length} other
-                    contract
-                    {result.crossVendorContext.sameVendor.length === 1
-                      ? ""
-                      : "s"}{" "}
-                    with this vendor
-                  </p>
-                )}
-              {result?.crossVendorContext?.insight && (
-                <p className="text-xs text-amber-700 bg-amber-50 rounded px-2 py-1">
-                  {result.crossVendorContext.insight}
-                </p>
-              )}
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleConfirm}>
-                  <Check className="w-3 h-3" />
-                  Confirm & Apply
-                </Button>
-                <Button size="sm" variant="ghost" onClick={handleCancel}>
-                  <X className="w-3 h-3" />
-                  Cancel
-                </Button>
-              </div>
-            </>
-          )}
+    <>
+      <Card
+        className={`flex flex-col gap-3 p-5 border-0 shadow-sm ${cfg.borderClass}`}
+      >
+        {/* Header row */}
+        <div className="flex items-start gap-2">
+          <cfg.Icon className={`w-4 h-4 mt-0.5 shrink-0 ${cfg.iconClass}`} />
+          <p className="flex-1 min-w-0 font-medium truncate text-foreground">
+            {item.title}
+          </p>
+          <Badge variant="outline" className={`shrink-0 ${cfg.badgeClass}`}>
+            {cfg.label}
+          </Badge>
         </div>
-      )}
 
-      {/* Button row (hidden when expanded) */}
-      {!expanded && (
-        <div
-          className={`flex items-center justify-between pt-1 ${BODY_INDENT}`}
-        >
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={handlePrimaryClick}>
-              {item.primaryAction.label}
-            </Button>
-            {item.secondaryAction && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() =>
-                  item.secondaryAction &&
-                  onAction(item.contractId, item.secondaryAction.status)
-                }
-              >
-                {item.secondaryAction.label}
-              </Button>
-            )}
+        {/* Body text */}
+        <p className={`text-sm text-muted-foreground ${BODY_INDENT}`}>
+          {item.reason}
+        </p>
+        {item.recommendation && (
+          <p className={`text-xs text-muted-foreground italic ${BODY_INDENT}`}>
+            {item.recommendation}
+          </p>
+        )}
+
+        {/* Inline loading indicator */}
+        {loading && (
+          <div
+            className={`${BODY_INDENT} flex items-center gap-2 text-sm text-muted-foreground py-2`}
+          >
+            <Loader2 className="w-4 h-4 animate-spin" />
+            {(draftActionType && DRAFT_ACTION_LABELS[draftActionType]) ??
+              "Processing..."}
           </div>
-          <Button size="sm" variant="ghost" onClick={handleViewClick}>
-            View &rarr;
-          </Button>
-        </div>
+        )}
+
+        {/* Button row (hidden when loading) */}
+        {!loading && (
+          <div
+            className={`flex items-center justify-between pt-1 ${BODY_INDENT}`}
+          >
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={handlePrimaryClick}>
+                {item.primaryAction.label}
+              </Button>
+              {item.secondaryAction && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() =>
+                    item.secondaryAction &&
+                    onAction(item.contractId, item.secondaryAction.status)
+                  }
+                >
+                  {item.secondaryAction.label}
+                </Button>
+              )}
+            </div>
+            <Button size="sm" variant="ghost" onClick={handleViewClick}>
+              View &rarr;
+            </Button>
+          </div>
+        )}
+      </Card>
+
+      {/* Draft Dialog */}
+      {draftActionType && (
+        <DraftDialog
+          open={dialogOpen && !loading}
+          onOpenChange={(open) => !open && handleDialogClose()}
+          title={DRAFT_DIALOG_TITLES[draftActionType] ?? "Draft"}
+          subtitle={`${item.title} — Review and edit before confirming.`}
+          draft={draftText}
+          onDraftChange={setDraftText}
+          crossVendorContext={result?.crossVendorContext}
+          footer={
+            <>
+              <Button variant="ghost" onClick={handleDialogClose}>
+                <X className="w-3 h-3" />
+                Cancel
+              </Button>
+              <Button onClick={handleConfirm}>
+                <Check className="w-3 h-3" />
+                Confirm & Apply
+              </Button>
+            </>
+          }
+        />
       )}
-    </Card>
+    </>
   );
 }

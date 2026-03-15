@@ -25,7 +25,8 @@ export type BriefingActionType =
   | "renew"
   | "flag"
   | "review"
-  | "activate";
+  | "activate"
+  | "verify";
 
 export type BriefingItem = {
   contractId: string;

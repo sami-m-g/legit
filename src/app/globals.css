@@ -237,3 +237,50 @@ html {
     @apply bg-background text-foreground;
   }
 }
+
+/* ---- Markdown draft rendering ---- */
+.draft-prose {
+  @apply text-sm text-foreground leading-relaxed;
+}
+.draft-prose h1,
+.draft-prose h2,
+.draft-prose h3 {
+  @apply font-semibold text-foreground mt-4 mb-2;
+}
+.draft-prose h1 {
+  @apply text-lg;
+}
+.draft-prose h2 {
+  @apply text-base;
+}
+.draft-prose h3 {
+  @apply text-sm;
+}
+.draft-prose p {
+  @apply mb-2;
+}
+.draft-prose ul,
+.draft-prose ol {
+  @apply pl-5 mb-2 space-y-1;
+}
+.draft-prose ul {
+  @apply list-disc;
+}
+.draft-prose ol {
+  @apply list-decimal;
+}
+.draft-prose li {
+  @apply text-sm;
+}
+.draft-prose strong {
+  @apply font-semibold;
+}
+.draft-prose em {
+  @apply italic;
+}
+.draft-prose blockquote {
+  @apply border-l-2 border-muted-foreground/30 pl-3 italic text-muted-foreground my-2;
+}
+.draft-prose hr {
+  @apply my-3 border-border;
+}
