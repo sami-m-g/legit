@@ -1,4 +1,24 @@
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+
+// Mock the extraction agent so tests control responses via globalThis.fetch
+mock.module("@/mastra/agents/extractionAgent", () => ({
+  extractionAgent: {
+    generate: async (messages: Array<{ role: string; content: string }>) => {
+      const res = await fetch("http://localhost:11434/api/generate", {
+        method: "POST",
+        body: JSON.stringify({ prompt: messages[0]?.content ?? "" }),
+      });
+      if (!res.ok) throw new Error(`Ollama error: ${res.status}`);
+      const json = await res.json();
+      const raw: string = json.response ?? "";
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("No JSON in response");
+      const parsed = JSON.parse(match[0]);
+      return { object: parsed };
+    },
+  },
+}));
+
 import { extractContractData } from "@/lib/extraction";
 
 const VALID_RESPONSE = {

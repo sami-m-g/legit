@@ -1,17 +1,22 @@
-import { createPool } from "@vercel/postgres";
-import { env } from "@/lib/env";
+import { createPool, type VercelPool } from "@vercel/postgres";
+import { requireEnv } from "@/lib/env";
 
 type Primitive = string | number | boolean | undefined | null;
 
-const pool = createPool({
-  connectionString: env.postgres_url,
-});
+let pool: VercelPool | null = null;
+
+function getPool() {
+  if (!pool) {
+    pool = createPool({ connectionString: requireEnv("postgres_url") });
+  }
+  return pool;
+}
 
 export async function query(
   strings: TemplateStringsArray,
   ...values: Primitive[]
 ) {
-  return await pool.sql(strings, ...values);
+  return await getPool().sql(strings, ...values);
 }
 
 export const sql = query;

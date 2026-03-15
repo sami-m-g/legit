@@ -1,7 +1,7 @@
 import { head } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
-import { env } from "@/lib/env";
+import { requireEnv } from "@/lib/env";
 
 export async function GET(
   request: Request,
@@ -33,7 +33,7 @@ export async function GET(
     let downloadUrl = blob_download_url;
     const upstream = await fetch(downloadUrl, {
       headers: {
-        Authorization: `Bearer ${env.blob_read_write_token}`,
+        Authorization: `Bearer ${requireEnv("blob_read_write_token")}`,
       },
     });
 
@@ -46,7 +46,7 @@ export async function GET(
       ? upstream
       : await fetch(downloadUrl, {
           headers: {
-            Authorization: `Bearer ${env.blob_read_write_token}`,
+            Authorization: `Bearer ${requireEnv("blob_read_write_token")}`,
           },
         });
 
